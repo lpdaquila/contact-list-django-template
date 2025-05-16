@@ -1,9 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.core.paginator import Paginator
 from django.db.models import Q
 from contact.models import Contact
 
 def index(request):
-    contacts = Contact.objects.filter(show=True).order_by('-id')[:30]
+    contacts_query = Contact.objects.filter(show=True).order_by('-id')
+    
+    paginator = Paginator(contacts_query, 30)
+    page_number = request.GET.get("page")
+    contacts = paginator.get_page(page_number)
     
     context = {
         'contacts': contacts,
@@ -22,16 +27,20 @@ def search(request):
     if not search_value:
         return redirect('contact:index')
     
-    contacts = Contact.objects\
+    contacts_query = Contact.objects\
         .filter(show=True)\
         .filter(
             Q(first_name__icontains=search_value) | # "OR" verification
             Q(phone__icontains=search_value) |
             Q(email__icontains=search_value)
         )\
-        .order_by('-id')[:30]
+        .order_by('-id')
         
     # print(contacts.query)
+    
+    paginator = Paginator(contacts_query, 30)
+    page_number = request.GET.get("page")
+    contacts = paginator.get_page(page_number)
     
     context = {
         'contacts': contacts,
